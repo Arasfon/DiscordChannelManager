@@ -35,7 +35,7 @@ async Task UserVoiceStateUpdated(SocketUser user, SocketVoiceState oldState, Soc
 
     await HandleVoiceState(oldState);
 
-    if (oldState.VoiceChannel?.Id != newState.VoiceChannel?.Id)
+    if (oldState.VoiceChannel?.CategoryId != newState.VoiceChannel?.CategoryId)
         await HandleVoiceState(newState);
 }
 
@@ -46,10 +46,9 @@ async Task HandleVoiceState(SocketVoiceState state)
     if (vc?.CategoryId is null)
         return;
 
-    if (activeUpdates.Remove((ulong)vc.CategoryId, out CancellationTokenSource? cts))
+    if (activeUpdates.TryGetValue((ulong)vc.CategoryId, out _))
     {
-        cts.Cancel();
-        cts.Dispose();
+        return;
     }
 
     if (config.Guilds?.TryGetValue(vc.Guild.Id, out GuildConfig? guildConfig) != true)
@@ -61,7 +60,7 @@ async Task HandleVoiceState(SocketVoiceState state)
     if (categoryConfig is null)
         return;
 
-    cts = new CancellationTokenSource();
+    CancellationTokenSource cts = new();
     if (!activeUpdates.TryAdd((ulong)vc.CategoryId, cts))
     {
         cts.Dispose();
